@@ -1,0 +1,97 @@
+import java_cup.runtime.*;
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
+
+parser code {:
+    scanner s;
+    parser(scanner s) { this.s = s; }
+
+    // Mapa para armazenar as variáveis e seus valores
+    Map<String, Integer> variables = new HashMap<>();
+:}
+
+scan with {: return s.next_token(); :};
+
+terminal SEMI, PLUS, UMINUS, MINUS, TIMES, LPAREN, RPAREN, IF, ELSE, WHILE, INT, ASSIGN, VOID, LBRACE, RBRACE, LT, GT;
+terminal Integer NUMBER;
+terminal String IDENTIFIER;
+
+non terminal Program, EndStmt, Statement, VarDecl, FuncDecl, FuncCall, IfStmt, WhileStmt, AssignStmt;
+non terminal Integer Expr;
+
+precedence left PLUS, MINUS;
+precedence left TIMES;
+precedence left ASSIGN;
+precedence left LT;
+precedence left GT;
+
+// Estrutura do programa: 
+Program ::= Statement {: System.out.print(""); :};
+
+// Declaração de variáveis
+VarDecl ::= INT IDENTIFIER:id ASSIGN Expr:e SEMI
+          {: 
+             System.out.println("Declaração de variavel: " + id + " = " + e);
+             variables.put(id, e); // Armazena a variável no mapa
+          :};
+
+// Definição de funções 
+FuncDecl ::= VOID IDENTIFIER LPAREN RPAREN LBRACE
+           {: System.out.println("Definição de função: " + s.yytext()); :};
+
+FuncCall ::= IDENTIFIER:id LPAREN RPAREN
+           {: 
+              System.out.println("Chamada de função: " + id);
+              // Se necessário, execute a função aqui
+            :};
+        
+// Estruturas de controle: if ou if-else
+IfStmt ::= IF LPAREN Expr RPAREN LBRACE   {: System.out.println("Estrutura if: " + s.yytext()); :}
+         | RBRACE ELSE LBRACE          {: System.out.println("Estrutura else: " + s.yytext()); :};
+
+// Estrutura de controle: while
+WhileStmt ::= WHILE LPAREN Expr RPAREN LBRACE
+            {: System.out.println("Estrutura while: " + s.yytext()); :};
+
+// Atribuições
+AssignStmt ::= IDENTIFIER:id ASSIGN Expr:e SEMI
+             {: 
+                 System.out.println("Atribuicao: " + id + " = " + e);
+                 variables.put(id, e);  // Atualiza o valor da variável
+                 RESULT = e;  // Atribui o valor da expressão à variável
+             :};
+
+// Fim Estrutura
+EndStmt ::= RBRACE {: System.out.println("Fim de Estrutura de controle"); :};
+
+// Expressões
+Expr ::= Expr:e1 PLUS Expr:e2 {: RESULT = e1 + e2; :}
+       | Expr:e1 MINUS Expr:e2 {: RESULT = e1 - e2; :}
+       | Expr:e1 TIMES Expr:e2 {: RESULT = e1 * e2; :}
+       | LPAREN Expr:e RPAREN {: RESULT = e; :}
+       | NUMBER:n {: RESULT = n; :}
+       | IDENTIFIER:id {: 
+            Integer value = variables.get(id);
+            if (value != null) {
+                RESULT = value;
+            } else {
+                System.err.println("Erro: variavel " + id + " nao definida.");
+                RESULT = 0;
+            }
+       :}
+       | Expr:e1 GT Expr:e2 {: RESULT = (e1 > e2) ? 1 : 0; :}
+       | Expr:e1 LT Expr:e2 {: RESULT = (e1 < e2) ? 1 : 0; :};
+
+
+// Instruções do programa
+Statement ::= VarDecl
+           | AssignStmt
+           | IfStmt
+           | WhileStmt
+           | Expr SEMI
+           | FuncDecl
+           | FuncCall SEMI
+           | EndStmt;
+           
+

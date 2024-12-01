@@ -1,0 +1,16 @@
+int x = 10;
+int y = 20;
+x = x + y;
+if (x + y) {
+    x = x - y;
+} else {
+    x = y * 2;
+}
+while (x < 100) {
+    x = x + 5;
+}
+void myFunction() {
+    int z = 50;
+    z = z * 2;
+}
+myFunction(); 
